@@ -1,6 +1,11 @@
 // test.cu
 //
 // demo of using thrust library to parse a large '|' delimited file.
+//
+// Build instructions at a Visual Studio 2010 Command Prompt: [CUDA 8.0 in the path here]
+// nvcc -O3 -arch=sm_21 -lcuda test.cu -o test
+// 
+// Run with 'test.exe' <ENTER>
 
 #include <iostream>
 #include <string>
@@ -91,9 +96,11 @@ int main()
     // char locations for line breaks in vector 
     thrust::device_vector<int> dev_pos(cnt+1);
     dev_pos[0] = -1;
-    thrust::copy_if(thrust::make_counting_iterator((unsigned int)0), 
-                    thrust::make_counting_iterator((unsigned int)fileSize),
-                    dev.begin(), dev_pos.begin()+1, is_break());
+    thrust::copy_if(thrust::make_counting_iterator((unsigned int)0),        // count from start of file
+                    thrust::make_counting_iterator((unsigned int)fileSize), // until end of file
+                    dev.begin(),        // stencil pred(*stencil)==true causes *dev_pos[] to get location of line break
+                    dev_pos.begin()+1,  // position of line break character
+                    is_break());        // predicate
 
     // 11 columns of 15 characters
     thrust::device_vector<char> dev_res1(cnt*15);
@@ -171,12 +178,12 @@ int main()
 
     // split file by line breaks and field separators
     thrust::counting_iterator<unsigned int> begin(0);
-    parse_functor ff((const char*)thrust::raw_pointer_cast(dev.data()),
-                     (char**)thrust::raw_pointer_cast(dest.data()), 
-                     thrust::raw_pointer_cast(ind.data()),
-                     thrust::raw_pointer_cast(ind_cnt.data()),
-                     thrust::raw_pointer_cast(sep.data()),
-                     thrust::raw_pointer_cast(dev_pos.data()),
+    parse_functor ff((const char*)thrust::raw_pointer_cast(dev.data()), // raw file characters
+                     (char**)thrust::raw_pointer_cast(dest.data()),     // array of pointers to dest (column) buffers
+                     thrust::raw_pointer_cast(ind.data()),              // mapping
+                     thrust::raw_pointer_cast(ind_cnt.data()),          // count of columns to parse
+                     thrust::raw_pointer_cast(sep.data()),              // separator character
+                     thrust::raw_pointer_cast(dev_pos.data()),          // 
                      thrust::raw_pointer_cast(dest_len.data()));
     thrust::for_each(begin, begin + cnt, ff); // now dev_pos vector contains the indexes of new line characters
 

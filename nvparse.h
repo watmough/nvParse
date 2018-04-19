@@ -7,6 +7,7 @@ struct is_break
  }
 };
 
+
 struct gpu_date
 {
 	const char *source;
@@ -14,9 +15,11 @@ struct gpu_date
 		
 	gpu_date(const char *_source, long long int *_dest):
 			  source(_source), dest(_dest) {}
+
     template <typename IndexType>
     __host__ __device__
-    void operator()(const IndexType & i) {	std ::cout << std::endl;
+    void operator()(const IndexType & i) {	
+        std ::cout << std::endl;
 		const char *s;
 		long long int acc;
 		int z = 0, c;
@@ -36,15 +39,19 @@ struct gpu_date
 	}
 };	
 
-
-struct gpu_atof
+// parse a char string to a double
+class gpu_atof
 {
-	const char *source;
-    double *dest;
+private:
+	const char  *source;
+    double      *dest;
 	const unsigned int *len;
-	
+
+public:	
 	gpu_atof(const char *_source, double *_dest, const unsigned int *_len):
-			  source(_source), dest(_dest), len(_len) {}
+			  source(_source), dest(_dest), len(_len) {};
+    
+    // templated by ...???
     template <typename IndexType>
     __host__ __device__
     void operator()(const IndexType & i) {	
@@ -88,14 +95,17 @@ struct gpu_atof
 };	
 
 
-struct gpu_atoll
+class gpu_atoll
 {
+private:
 	const char *source;
     long long int *dest;
 	const unsigned int *len;
-	
+
+public:	
 	gpu_atoll(const char *_source, long long int *_dest, const unsigned int *_len):
-			  source(_source), dest(_dest), len(_len) {}
+			  source(_source), dest(_dest), len(_len) {};
+
     template <typename IndexType>
     __host__ __device__
     void operator()(const IndexType & i) {	
@@ -139,8 +149,9 @@ struct gpu_atoll
 	}
 };
    
-struct parse_functor
+class parse_functor
 {
+private:
 	const char *source;
     char **dest;
     const unsigned int *ind;
@@ -149,14 +160,24 @@ struct parse_functor
 	const int *src_ind;
 	const unsigned int *dest_len;
 
-    parse_functor(const char* _source, char** _dest, const unsigned int* _ind, const unsigned int* _cnt, const char* _separator,
-				  const int* _src_ind, const unsigned int* _dest_len):
-        source(_source), dest(_dest), ind(_ind), cnt(_cnt),  separator(_separator), src_ind(_src_ind), dest_len(_dest_len) {}
+public:
+    parse_functor(  const char* _source,                // source characters
+                    char** _dest,                       // array of pointers to destination
+                    const unsigned int* _ind,           // array of column mappings
+                    const unsigned int* _cnt,           // count of fields to parse
+                    const char* _separator,             // separator character
+                    const int* _src_ind,                // 
+                    const unsigned int* _dest_len) :    // destination column lengths
+        source(_source), dest(_dest), ind(_ind), cnt(_cnt),  separator(_separator), src_ind(_src_ind), dest_len(_dest_len) {};
 
     template <typename IndexType>
     __host__ __device__
     void operator()(const IndexType & i) {
-		unsigned int curr_cnt = 0, dest_curr = 0, j = 0, t, pos;
+		unsigned int curr_cnt = 0,      
+                     dest_curr = 0, 
+                     j = 0, 
+                     t = 0, 
+                     pos = 0;
 		pos = src_ind[i]+1;
 		
 		while(dest_curr < *cnt) {
